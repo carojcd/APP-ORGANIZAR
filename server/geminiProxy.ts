@@ -10,8 +10,8 @@
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { GEMINI_RESPONSE_SCHEMA, buildSystemPrompt } from '../src/services/ai/gemini/prompt';
-import type { InterpretContext } from '../src/services/ai/types';
+import { GEMINI_RESPONSE_SCHEMA, buildSystemPrompt } from '../src/services/ai/gemini/prompt.ts';
+import type { InterpretContext } from '../src/services/ai/types.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const MAX_BODY = 64 * 1024;

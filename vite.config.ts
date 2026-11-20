@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath, URL } from 'node:url';
-import { geminiProxy } from './server/geminiProxy';
+import { geminiProxy } from './server/geminiProxy.ts';
 
 // `npm run dev`        → HTTP en la red local (http://IP:5173)
 // `npm run dev:https`  → HTTPS autofirmado; necesario para el micrófono en Android.
