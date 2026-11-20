@@ -54,4 +54,4 @@ npm test
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Reglas de interpretación de fechas y horas](docs/INTERPRETACION.md)
 - [Cómo conectar Gemini](docs/GEMINI.md)
-- [Esquema para Supabase](supabase/schema.sql)
+- [Datos en la nube con Supabase](docs/SUPABASE.md)

@@ -165,7 +165,8 @@ class IndexedDBMetaRepository implements MetaRepository {
 }
 
 export class IndexedDBProvider implements StorageProvider {
-  readonly name = 'IndexedDB (local)';
+  readonly name = 'Este dispositivo (IndexedDB)';
+  readonly kind = 'local' as const;
   private readonly listeners = new Set<(c: StorageChange) => void>();
   private readonly emit: Emit = (change) => this.listeners.forEach((l) => l(change));
   readonly items = new IndexedDBItemRepository(this.emit);

@@ -43,8 +43,27 @@ export interface MetaRepository {
 
 export type StorageChange = { scope: 'items' | 'conversations' };
 
+export interface AuthUser {
+  id: string;
+  email: string | null;
+}
+
+/** Autenticación (solo en proveedores en la nube). */
+export interface AuthService {
+  getUser(): Promise<AuthUser | null>;
+  signIn(email: string, password: string): Promise<AuthUser>;
+  /** Devuelve el usuario si la sesión queda abierta, o null si hay que confirmar el correo. */
+  signUp(email: string, password: string): Promise<AuthUser | null>;
+  signOut(): Promise<void>;
+  onChange(listener: (user: AuthUser | null) => void): () => void;
+}
+
 export interface StorageProvider {
   readonly name: string;
+  /** 'local' = solo este dispositivo; 'cloud' = sincronizado. */
+  readonly kind: 'local' | 'cloud';
+  /** Presente si el proveedor requiere iniciar sesión. */
+  readonly auth?: AuthService;
   readonly items: ItemRepository;
   readonly conversations: ConversationRepository;
   readonly meta: MetaRepository;

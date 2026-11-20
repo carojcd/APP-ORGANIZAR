@@ -4,7 +4,7 @@
  * pertenecen al backend.
  */
 export type AIProviderName = 'auto' | 'demo' | 'gemini';
-export type StorageProviderName = 'local' | 'supabase';
+export type StorageProviderName = 'auto' | 'local' | 'supabase';
 
 function read(name: string): string | undefined {
   const value = (import.meta.env as Record<string, string | undefined>)[name];
@@ -14,8 +14,9 @@ function read(name: string): string | undefined {
 export const env = {
   aiProvider: (read('VITE_AI_PROVIDER') ?? 'auto') as AIProviderName,
   aiEndpoint: read('VITE_AI_ENDPOINT') ?? '/api/ai/interpret',
-  storageProvider: (read('VITE_STORAGE_PROVIDER') ?? 'local') as StorageProviderName,
+  storageProvider: (read('VITE_STORAGE_PROVIDER') ?? 'auto') as StorageProviderName,
   supabaseUrl: read('VITE_SUPABASE_URL'),
-  supabaseAnonKey: read('VITE_SUPABASE_ANON_KEY'),
+  // Acepta la clave nueva (publishable) o la antigua (anon); ambas son públicas.
+  supabaseAnonKey: read('VITE_SUPABASE_ANON_KEY') ?? read('VITE_SUPABASE_PUBLISHABLE_KEY'),
   fcmVapidKey: read('VITE_FCM_VAPID_KEY'),
 } as const;

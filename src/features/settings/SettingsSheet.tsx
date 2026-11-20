@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Bell, Database, Download, Monitor, Moon, RotateCcw, Sparkles, Sun, Trash2 } from 'lucide-react';
+import { Bell, CloudUpload, Database, Download, LogOut, Monitor, Moon, RotateCcw, Sparkles, Sun, Trash2, UserRound } from 'lucide-react';
 import { LOCALE } from '@/config/locale';
 import { cn } from '@/lib/cn';
 import { resetDemoData } from '@/services/demo/seed';
+import { getLocalStorage } from '@/services/storage';
 import { useApp, type ThemeMode } from '@/state/AppContext';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
@@ -27,8 +28,29 @@ function Row({ icon, title, text, children }: { icon: React.ReactNode; title: st
 }
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { theme, setTheme, storage, assistant, aiNotice, toast, notificationPermission, enableNotifications, canInstall, install } = useApp();
+  const { theme, setTheme, storage, assistant, aiNotice, authUser, signOut, toast, notificationPermission, enableNotifications, canInstall, install } = useApp();
   const [confirm, setConfirm] = useState<null | 'reset' | 'wipe'>(null);
+  const [uploading, setUploading] = useState(false);
+  const cloud = storage.kind === 'cloud';
+
+  /** Copia a la nube lo creado en este dispositivo (sin los datos de demostración). */
+  const uploadLocal = async () => {
+    setUploading(true);
+    try {
+      const local = await getLocalStorage().items.list();
+      const own = local.filter((i) => i.source !== 'demo');
+      if (!own.length) {
+        toast('No hay registros propios guardados en este dispositivo');
+        return;
+      }
+      await storage.items.bulkPut(own);
+      toast(`Subí ${own.length} ${own.length === 1 ? 'registro' : 'registros'} a la nube`);
+    } catch {
+      toast('No se pudieron subir los datos. Revisa tu conexión.', { tone: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
   const provider = assistant.provider;
 
   const run = async (kind: 'reset' | 'wipe' | 'chats') => {
@@ -65,6 +87,20 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         ))}
       </div>
 
+      {cloud && authUser && (
+        <>
+          <p className="text-xs font-bold uppercase tracking-wide text-faint">Cuenta</p>
+          <div className="mb-4 divide-y divide-line">
+            <Row icon={<UserRound size={19} />} title={authUser.email ?? 'Tu cuenta'} text="Datos sincronizados en la nube.">
+              <Button size="sm" variant="secondary" icon={<LogOut size={15} />} onClick={() => void signOut().then(onClose)}>Salir</Button>
+            </Row>
+            <Row icon={<CloudUpload size={19} />} title="Subir datos de este dispositivo" text="Copia a tu cuenta lo que anotaste antes en este dispositivo (sin datos de demostración).">
+              <Button size="sm" disabled={uploading} onClick={() => void uploadLocal()}>{uploading ? 'Subiendo…' : 'Subir'}</Button>
+            </Row>
+          </div>
+        </>
+      )}
+
       <p className="text-xs font-bold uppercase tracking-wide text-faint">General</p>
       <div className="divide-y divide-line">
         <Row
@@ -91,7 +127,11 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             <Button size="sm" variant="secondary" onClick={() => void enableNotifications()}>Activar</Button>
           )}
         </Row>
-        <Row icon={<Database size={19} />} title="Almacenamiento" text={`${storage.name}. Tus datos se quedan en este dispositivo.`} />
+        <Row
+          icon={<Database size={19} />}
+          title="Almacenamiento"
+          text={cloud ? `${storage.name}. Se sincroniza entre tus dispositivos.` : `${storage.name}. Tus datos se quedan en este dispositivo.`}
+        />
         {canInstall && (
           <Row icon={<Download size={19} />} title="Instalar aplicación" text="Agrégala a tu pantalla de inicio.">
             <Button size="sm" onClick={() => void install()}>Instalar</Button>
@@ -101,12 +141,14 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-faint">Datos</p>
       <div className="space-y-2">
-        <Button block variant="secondary" icon={<RotateCcw size={17} />} onClick={() => (confirm === 'reset' ? void run('reset') : setConfirm('reset'))}>
-          {confirm === 'reset' ? 'Toca de nuevo para confirmar' : 'Restaurar datos de demostración'}
-        </Button>
+        {!cloud && (
+          <Button block variant="secondary" icon={<RotateCcw size={17} />} onClick={() => (confirm === 'reset' ? void run('reset') : setConfirm('reset'))}>
+            {confirm === 'reset' ? 'Toca de nuevo para confirmar' : 'Restaurar datos de demostración'}
+          </Button>
+        )}
         <Button block variant="secondary" onClick={() => void run('chats')}>Borrar historial de conversaciones</Button>
         <Button block variant="danger" icon={<Trash2 size={17} />} onClick={() => (confirm === 'wipe' ? void run('wipe') : setConfirm('wipe'))}>
-          {confirm === 'wipe' ? 'Toca de nuevo para borrar todo' : 'Borrar todos los datos'}
+          {confirm === 'wipe' ? 'Toca de nuevo para borrar todo' : cloud ? 'Borrar todos los datos de mi cuenta' : 'Borrar todos los datos'}
         </Button>
       </div>
 

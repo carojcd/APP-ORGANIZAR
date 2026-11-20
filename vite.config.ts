@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
   },
   server: { host: true, port: 5173 },
   preview: { host: true, port: 4173 },
+  build: { chunkSizeWarningLimit: 800 },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

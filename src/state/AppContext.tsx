@@ -14,7 +14,7 @@ import { AssistantService } from '@/services/assistant/AssistantService';
 import { ensureDemoData } from '@/services/demo/seed';
 import { LocalNotificationService } from '@/services/notifications/LocalNotificationService';
 import { dueReminders } from '@/services/notifications/reminders';
-import { getStorage, type StorageProvider } from '@/services/storage';
+import { getStorage, type AuthUser, type StorageProvider } from '@/services/storage';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -41,6 +41,9 @@ interface AppContextValue {
   fatalError: string | null;
   storage: StorageProvider;
   assistant: AssistantService;
+  /** undefined = comprobando; null = sin sesión (solo en modo nube). */
+  authUser: AuthUser | null | undefined;
+  signOut: () => Promise<void>;
   /** Por qué Gemini no está activo (clave inválida, etc.), si aplica. */
   aiNotice?: string;
   items: Item[];
@@ -92,6 +95,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [assistant, setAssistant] = useState<AssistantService | null>(null);
   const [aiNotice, setAiNotice] = useState<string | undefined>();
+  const [authUser, setAuthUser] = useState<AuthUser | null | undefined>(storage.auth ? undefined : null);
+  const needsLogin = Boolean(storage.auth);
+  const canLoad = !needsLogin || Boolean(authUser);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [theme, setThemeState] = useState<ThemeMode>(readTheme);
@@ -107,11 +113,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setItems(await storage.items.list());
   }, [storage]);
 
+  /* ── Sesión (solo en modo nube) ── */
   useEffect(() => {
+    if (!storage.auth) return;
+    let active = true;
+    storage.auth.getUser().then((u) => active && setAuthUser(u)).catch(() => active && setAuthUser(null));
+    const off = storage.auth.onChange((u) => setAuthUser(u));
+    return () => {
+      active = false;
+      off();
+    };
+  }, [storage]);
+
+  useEffect(() => {
+    if (!canLoad) {
+      setItems([]);
+      setReady(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
-        const [ai] = await Promise.all([initAIProvider(), ensureDemoData(storage)]);
+        const [ai] = await Promise.all([
+          initAIProvider(),
+          // Los datos de demostración solo se siembran en modo local.
+          storage.kind === 'local' ? ensureDemoData(storage) : Promise.resolve(false),
+        ]);
         if (cancelled) return;
         setAssistant(new AssistantService(storage, ai.provider));
         setAiNotice(ai.notice);
@@ -119,17 +146,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setReady(true);
       } catch (error) {
         console.error(error);
-        if (!cancelled) setFatalError('No se pudo abrir el almacenamiento local del navegador. ' + toUserMessage(error));
+        if (!cancelled) {
+          setFatalError(
+            storage.kind === 'cloud'
+              ? toUserMessage(error)
+              : 'No se pudo abrir el almacenamiento local del navegador. ' + toUserMessage(error),
+          );
+        }
       }
     })();
     const unsubscribe = storage.subscribe((c) => {
-      if (c.scope === 'items') void refresh();
+      if (c.scope === 'items') void refresh().catch(() => undefined);
     });
     return () => {
       cancelled = true;
       unsubscribe();
     };
-  }, [storage, refresh]);
+  }, [storage, refresh, canLoad]);
+
+  const signOut = useCallback(async () => {
+    await storage.auth?.signOut();
+    setAuthUser(null);
+  }, [storage]);
 
   /* ── Tema ── */
   const setTheme = useCallback((t: ThemeMode) => {
@@ -285,7 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppContextValue = {
     ready: ready && assistant !== null, fatalError, storage,
     // La UI solo se monta cuando `ready` es true, así que assistant ya existe.
-    assistant: assistant as AssistantService, aiNotice, items, today, route, navigate, theme, setTheme,
+    assistant: assistant as AssistantService, aiNotice, authUser, signOut, items, today, route, navigate, theme, setTheme,
     editor, openEditor, closeEditor, toast, toasts, dismissToast,
     createItem, updateItem, deleteItem, toggleDone, restoreItems,
     voiceRequested,
