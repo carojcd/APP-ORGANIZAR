@@ -1,0 +1,157 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────── Tokens de diseño ───────────── */
+:root {
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --surface-2: #efefeb;
+  --fg: #16161a;
+  --muted: #6c6c75;
+  --faint: #a1a1a9;
+  --line: #e6e6e1;
+  --accent: #4f46e5;
+  --accent-fg: #ffffff;
+  --accent-soft: #eceafd;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --success: #059669;
+  --success-soft: #e3f6ef;
+  --warning: #d97706;
+
+  --cat-work: #2563eb;
+  --cat-work-soft: #e7eefd;
+  --cat-freelance: #9333ea;
+  --cat-freelance-soft: #f3e8fd;
+  --cat-personal: #d97706;
+  --cat-personal-soft: #fdf1e0;
+  --cat-finance: #059669;
+  --cat-finance-soft: #e1f5ee;
+  --cat-neutral: #6b7280;
+  --cat-neutral-soft: #eeeff1;
+
+  --shadow-card: 0 1px 2px rgb(16 16 24 / 0.04), 0 4px 16px rgb(16 16 24 / 0.04);
+  --shadow-float: 0 8px 30px rgb(16 16 24 / 0.12);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0d0d10;
+  --surface: #17171c;
+  --surface-2: #212128;
+  --fg: #f3f3f5;
+  --muted: #9b9ba6;
+  --faint: #62626c;
+  --line: #2a2a32;
+  --accent: #8b8af7;
+  --accent-fg: #0d0d10;
+  --accent-soft: #23223f;
+  --danger: #f87171;
+  --danger-soft: #3a1c1f;
+  --success: #34d399;
+  --success-soft: #12302a;
+  --warning: #fbbf24;
+
+  --cat-work: #60a5fa;
+  --cat-work-soft: #172338;
+  --cat-freelance: #c084fc;
+  --cat-freelance-soft: #2a1a3a;
+  --cat-personal: #fbbf24;
+  --cat-personal-soft: #33270f;
+  --cat-finance: #34d399;
+  --cat-finance-soft: #10302a;
+  --cat-neutral: #9ca3af;
+  --cat-neutral-soft: #24262b;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-float: 0 10px 30px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+  --animate-fade-up: fade-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet-up: sheet-up 0.32s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-pulse-ring: pulse-ring 1.4s ease-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+@keyframes typing {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* ───────────── Base ───────────── */
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input, textarea, select { font: inherit; color: inherit; }
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator { opacity: 0.55; }
+  .dark input[type='date']::-webkit-calendar-picker-indicator,
+  .dark input[type='time']::-webkit-calendar-picker-indicator { filter: invert(1); }
+}
+
+@layer utilities {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .typing-dot { animation: typing 1.2s infinite; }
+}
+
+/* Colores por categoría (se aplican con data-cat="work" etc.). */
+[data-cat] { --c: var(--cat-neutral); --c-soft: var(--cat-neutral-soft); }
+[data-cat='work'] { --c: var(--cat-work); --c-soft: var(--cat-work-soft); }
+[data-cat='freelance'] { --c: var(--cat-freelance); --c-soft: var(--cat-freelance-soft); }
+[data-cat='personal'] { --c: var(--cat-personal); --c-soft: var(--cat-personal-soft); }
+[data-cat='finance'] { --c: var(--cat-finance); --c-soft: var(--cat-finance-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
