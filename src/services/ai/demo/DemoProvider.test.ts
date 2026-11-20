@@ -85,25 +85,25 @@ describe('ambigüedades: pregunta en vez de inventar', () => {
     const a = run('Mañana llamar a Pedro a las 3');
     expect(a.type).toBe('clarify');
     if (a.type !== 'clarify') return;
-    expect(a.pending.missing).toBe('meridiem');
-    const resolved = run('3:00 p. m.', a.pending);
+    expect(a.pending?.missing).toBe('meridiem');
+    const resolved = run('3:00 p. m.', a.pending ?? null);
     expect(resolved).toMatchObject({ type: 'create_item', item: { date: '2026-11-21', time: '15:00', title: 'Llamar a Pedro' } });
   });
   it('hora sin fecha pide el día y luego a. m./p. m.', () => {
     const a = run('Reunión de equipo a las 10');
     expect(a.type).toBe('clarify');
     if (a.type !== 'clarify') return;
-    expect(a.pending.missing).toBe('date');
-    const b = run('Mañana', a.pending);
+    expect(a.pending?.missing).toBe('date');
+    const b = run('Mañana', a.pending ?? null);
     expect(b.type).toBe('clarify');
     if (b.type !== 'clarify') return;
-    expect(b.pending.missing).toBe('meridiem');
-    expect(run('a. m.', b.pending)).toMatchObject({ type: 'create_item', item: { date: '2026-11-21', time: '10:00' } });
+    expect(b.pending?.missing).toBe('meridiem');
+    expect(run('a. m.', b.pending ?? null)).toMatchObject({ type: 'create_item', item: { date: '2026-11-21', time: '10:00' } });
   });
   it('cancelar una aclaración', () => {
     const a = run('Mañana llamar a Pedro a las 3');
     if (a.type !== 'clarify') throw new Error('se esperaba clarify');
-    expect(run('cancelar', a.pending).type).toBe('reply');
+    expect(run('cancelar', a.pending ?? null).type).toBe('reply');
   });
   it('fecha imposible', () => {
     expect(run('Pagar algo el 31 de febrero').type).toBe('reply');

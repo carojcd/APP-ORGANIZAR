@@ -3,7 +3,7 @@
  * Las claves secretas (GEMINI_API_KEY, etc.) NUNCA deben vivir aquí:
  * pertenecen al backend.
  */
-export type AIProviderName = 'demo' | 'gemini';
+export type AIProviderName = 'auto' | 'demo' | 'gemini';
 export type StorageProviderName = 'local' | 'supabase';
 
 function read(name: string): string | undefined {
@@ -12,7 +12,7 @@ function read(name: string): string | undefined {
 }
 
 export const env = {
-  aiProvider: (read('VITE_AI_PROVIDER') ?? 'demo') as AIProviderName,
+  aiProvider: (read('VITE_AI_PROVIDER') ?? 'auto') as AIProviderName,
   aiEndpoint: read('VITE_AI_ENDPOINT') ?? '/api/ai/interpret',
   storageProvider: (read('VITE_STORAGE_PROVIDER') ?? 'local') as StorageProviderName,
   supabaseUrl: read('VITE_SUPABASE_URL'),

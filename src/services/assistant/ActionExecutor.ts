@@ -113,7 +113,7 @@ export class ActionExecutor {
         return { text: action.text, outcomes: [], pending: null };
 
       case 'clarify':
-        return { text: action.question, outcomes: [], quickReplies: action.options, pending: action.pending };
+        return { text: action.question, outcomes: [], quickReplies: action.options, pending: action.pending ?? null };
 
       case 'create_item': {
         const draft = draftFromAction(action.item);

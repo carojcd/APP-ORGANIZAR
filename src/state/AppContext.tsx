@@ -9,7 +9,7 @@ import { useHashRoute, type Route } from '@/hooks/useHashRoute';
 import { useToday } from '@/hooks/useToday';
 import { toUserMessage } from '@/lib/errors';
 import { formatTime } from '@/lib/format';
-import { getAIProvider } from '@/services/ai';
+import { initAIProvider } from '@/services/ai';
 import { AssistantService } from '@/services/assistant/AssistantService';
 import { ensureDemoData } from '@/services/demo/seed';
 import { LocalNotificationService } from '@/services/notifications/LocalNotificationService';
@@ -41,6 +41,8 @@ interface AppContextValue {
   fatalError: string | null;
   storage: StorageProvider;
   assistant: AssistantService;
+  /** Por qué Gemini no está activo (clave inválida, etc.), si aplica. */
+  aiNotice?: string;
   items: Item[];
   today: string;
   route: Route;
@@ -83,12 +85,13 @@ function readTheme(): ThemeMode {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const storage = useMemo(() => getStorage(), []);
-  const assistant = useMemo(() => new AssistantService(storage, getAIProvider()), [storage]);
   const notifications = useMemo(() => new LocalNotificationService(), []);
   const today = useToday();
   const { route, navigate } = useHashRoute();
 
   const [ready, setReady] = useState(false);
+  const [assistant, setAssistant] = useState<AssistantService | null>(null);
+  const [aiNotice, setAiNotice] = useState<string | undefined>();
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [theme, setThemeState] = useState<ThemeMode>(readTheme);
@@ -108,8 +111,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        await ensureDemoData(storage);
-        if (!cancelled) await refresh();
+        const [ai] = await Promise.all([initAIProvider(), ensureDemoData(storage)]);
+        if (cancelled) return;
+        setAssistant(new AssistantService(storage, ai.provider));
+        setAiNotice(ai.notice);
+        await refresh();
         if (!cancelled) setReady(true);
       } catch (error) {
         console.error(error);
@@ -277,7 +283,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [installEvent]);
 
   const value: AppContextValue = {
-    ready, fatalError, storage, assistant, items, today, route, navigate, theme, setTheme,
+    ready: ready && assistant !== null, fatalError, storage,
+    // La UI solo se monta cuando `ready` es true, así que assistant ya existe.
+    assistant: assistant as AssistantService, aiNotice, items, today, route, navigate, theme, setTheme,
     editor, openEditor, closeEditor, toast, toasts, dismissToast,
     createItem, updateItem, deleteItem, toggleDone, restoreItems,
     voiceRequested,

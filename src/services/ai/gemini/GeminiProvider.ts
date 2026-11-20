@@ -1,25 +1,40 @@
 /**
- * Proveedor Gemini (ETAPA FUTURA — no activo).
+ * Proveedor Gemini.
  *
- * Arquitectura de seguridad: el navegador NUNCA llama a Gemini ni conoce la
- * API key. Envía el mensaje y el contexto a un endpoint propio
- * (VITE_AI_ENDPOINT); ese backend guarda GEMINI_API_KEY como secreto,
- * llama a Gemini con `buildSystemPrompt` + `GEMINI_RESPONSE_SCHEMA` y
- * devuelve `{ actions: [...] }`. Aquí se valida esa respuesta antes de usarla.
+ * El navegador NUNCA llama a Gemini ni conoce la API key: envía el mensaje y
+ * el contexto al servidor intermedio propio (VITE_AI_ENDPOINT, por defecto
+ * /api/ai/interpret), que guarda GEMINI_API_KEY. La respuesta se valida aquí
+ * antes de ejecutar cualquier acción.
  */
 import { AppError } from '@/lib/errors';
 import { parseInterpretation } from '../schema';
 import type { AIProvider, InterpretContext, Interpretation } from '../types';
 
+/** Gemini devuelve null en campos no usados; los quitamos para no borrar datos al actualizar. */
+function stripNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripNulls);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => v !== null && v !== undefined)
+        .map(([k, v]) => [k, stripNulls(v)]),
+    );
+  }
+  return value;
+}
+
 export class GeminiProvider implements AIProvider {
   readonly id = 'gemini';
-  readonly label = 'Google Gemini';
   readonly isDemo = false;
+  readonly label: string;
 
   constructor(
     private readonly endpoint: string,
-    private readonly timeoutMs = 20_000,
-  ) {}
+    model?: string,
+    private readonly timeoutMs = 30_000,
+  ) {
+    this.label = model ? `Google Gemini · ${model}` : 'Google Gemini';
+  }
 
   async interpret(message: string, context: InterpretContext): Promise<Interpretation> {
     const controller = new AbortController();
@@ -31,10 +46,15 @@ export class GeminiProvider implements AIProvider {
         body: JSON.stringify({ message, context }),
         signal: controller.signal,
       });
+      const data: unknown = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new AppError(`Endpoint IA respondió ${res.status}`, 'El servicio de IA no está disponible en este momento.');
+        const userMessage =
+          data && typeof data === 'object' && 'userMessage' in data && typeof data.userMessage === 'string'
+            ? data.userMessage
+            : 'El servicio de IA no está disponible en este momento.';
+        throw new AppError(`Endpoint IA respondió ${res.status}`, userMessage);
       }
-      return parseInterpretation(await res.json());
+      return parseInterpretation(stripNulls(data));
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError('Fallo de red con el endpoint de IA', 'No pude conectar con el servicio de IA.', { cause: error });

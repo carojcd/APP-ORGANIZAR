@@ -29,6 +29,8 @@ export class AssistantService {
 
   async send(conversationId: string, text: string): Promise<{ user: ChatMessage; assistant: ChatMessage }> {
     const clean = text.trim().slice(0, 1000);
+    const previous = await this.storage.conversations.listMessages(conversationId);
+    const history = previous.slice(-10).map(({ role, text: t }) => ({ role, text: t.slice(0, 500) }));
     const user = await this.storage.conversations.addMessage({ conversationId, role: 'user', text: clean });
     await this.autoTitle(conversationId, clean);
 
@@ -48,6 +50,7 @@ export class AssistantService {
           id, title, categoryId, date, time, status, amount,
         })),
         categories: CATEGORIES.map(({ id, label, description }) => ({ id, label, description })),
+        history,
       });
       const result = await new ActionExecutor({ items: this.storage.items, today }).execute(interpretation.actions);
       if (result.pending) this.pending.set(conversationId, result.pending);

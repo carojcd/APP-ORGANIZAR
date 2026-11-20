@@ -118,7 +118,7 @@ export function ChatScreen() {
             {isDemo && (
               <p className="mb-4 flex gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-[13px] text-muted">
                 <Info size={16} className="mt-0.5 shrink-0" />
-                Estás en modo demostración: un intérprete local entiende frases comunes. Los cambios sí se guardan en este dispositivo.
+                Estás en modo demostración: un intérprete local entiende frases comunes. Los cambios sí se guardan en este dispositivo. Para activar Gemini, agrega tu clave en .env.local.
               </p>
             )}
             <div className="flex flex-col gap-2">

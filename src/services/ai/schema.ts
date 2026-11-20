@@ -54,7 +54,7 @@ export function validateAction(action: unknown, path = 'action'): string[] {
       break;
     case 'clarify':
       if (typeof action.question !== 'string') issues.push(`${path}.question requerido`);
-      if (!isObj(action.pending)) issues.push(`${path}.pending requerido`);
+      if (action.pending != null && !isObj(action.pending)) issues.push(`${path}.pending inválido`);
       break;
     case 'reply':
       if (typeof action.text !== 'string') issues.push(`${path}.text requerido`);

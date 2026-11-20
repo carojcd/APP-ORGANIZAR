@@ -1,29 +1,34 @@
-# Conectar Google Gemini (etapa futura)
+# Google Gemini
 
-La integración está **preparada pero desactivada**. No hay API key en el proyecto.
+## Activarlo (en tu computador)
+1. En la carpeta del proyecto crea un archivo llamado **`.env.local`** con esta línea (tu clave, sin comillas ni espacios):
+   ```
+   GEMINI_API_KEY=AIza...tu_clave
+   ```
+2. Si `npm run dev` estaba corriendo, deténlo (Ctrl + C) y vuelve a ejecutarlo.
+3. En el Asistente, el indicador debe decir **"Google Gemini · <modelo>"**.
 
-## Principio de seguridad
-El navegador **nunca** habla con Gemini ni conoce la clave:
+`.env.local` está en `.gitignore`: nunca se sube a GitHub. No compartas la clave por chat ni capturas.
 
+Opcional: `GEMINI_MODEL=nombre-del-modelo` para fijar un modelo. Si no lo pones, el servidor elige el modelo *Flash* más reciente disponible para tu clave.
+
+## Cómo funciona
 ```
-PWA ──POST /api/ai/interpret {message, context}──► Backend propio ──► Gemini API
-    ◄──────────── { actions: [...] } ─────────────┘   (GEMINI_API_KEY como secreto)
+PWA ──POST /api/ai/interpret {message, context}──► server/geminiProxy.ts (Node, dentro de Vite) ──► Gemini API
+    ◄──────────── { actions: [...] } ────────────┘   lee GEMINI_API_KEY de .env.local
 ```
+- El navegador nunca ve la clave: Vite solo expone variables con prefijo `VITE_`.
+- Instrucciones y esquema JSON compartidos: `src/services/ai/gemini/prompt.ts`.
+- La respuesta se valida en `src/services/ai/schema.ts` antes de ejecutar nada.
+- Si Gemini falla (sin internet, límite gratuito, clave inválida), el asistente lo avisa y usa el modo demostración para ese mensaje.
+- Para forzar el modo demostración: `VITE_AI_PROVIDER=demo` en `.env.local`.
 
-## Qué ya existe
-- `src/services/ai/types.ts`: contrato `AIProvider` y tipos de acciones.
-- `src/services/ai/schema.ts`: validador de la respuesta (se aplica siempre).
-- `src/services/ai/gemini/prompt.ts`: `buildSystemPrompt(ctx)` y `GEMINI_RESPONSE_SCHEMA`.
-- `src/services/ai/gemini/GeminiProvider.ts`: cliente que llama al endpoint, con timeout y manejo de errores.
-- `src/services/ai/index.ts`: fábrica que elige el proveedor por `VITE_AI_PROVIDER`.
+## Solución de problemas
+| Lo que ves | Qué hacer |
+|---|---|
+| Sigue diciendo "Modo demostración" | Revisa que el archivo se llame exactamente `.env.local` (no `.env.local.txt`), que esté en la carpeta del proyecto y reinicia `npm run dev`. En Configuración aparece el motivo. |
+| "La clave de Gemini no es válida" | Copia de nuevo la clave desde Google AI Studio. |
+| "Se alcanzó el límite de uso gratuito" | Espera unos minutos; el plan gratuito tiene límites por minuto y por día. |
 
-## Qué falta
-1. Crear la clave en Google AI Studio (la aportas tú; no se inventa).
-2. Crear el backend/función serverless (p. ej. Supabase Edge Function, Vercel o Cloudflare) que:
-   - reciba `{ message, context }` y valide tamaño/autenticación;
-   - llame a `generateContent` con `systemInstruction = buildSystemPrompt(context)`,
-     `generationConfig.responseMimeType = "application/json"` y `responseSchema = GEMINI_RESPONSE_SCHEMA`;
-   - devuelva el JSON tal cual.
-3. Guardar `GEMINI_API_KEY` como secreto del backend (nunca con prefijo `VITE_`).
-4. Definir `VITE_AI_PROVIDER=gemini` y `VITE_AI_ENDPOINT` en `.env.local`.
-5. Opcional: usar el modo demo como respaldo si el backend falla.
+## Producción (más adelante)
+`npm run dev` / `npm run preview` incluyen el servidor intermedio. Al publicar la app en internet habrá que mover `server/geminiProxy.ts` a una función serverless (Supabase Edge Functions, Vercel, Cloudflare) con la clave como secreto.

@@ -27,7 +27,7 @@ function Row({ icon, title, text, children }: { icon: React.ReactNode; title: st
 }
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { theme, setTheme, storage, assistant, toast, notificationPermission, enableNotifications, canInstall, install } = useApp();
+  const { theme, setTheme, storage, assistant, aiNotice, toast, notificationPermission, enableNotifications, canInstall, install } = useApp();
   const [confirm, setConfirm] = useState<null | 'reset' | 'wipe'>(null);
   const provider = assistant.provider;
 
@@ -70,7 +70,11 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         <Row
           icon={<Sparkles size={19} />}
           title="Inteligencia artificial"
-          text={provider.isDemo ? 'Modo demostración: intérprete local por reglas. Gemini se conectará en una próxima etapa.' : provider.label}
+          text={
+            provider.isDemo
+              ? aiNotice ?? 'Modo demostración. Para usar Gemini agrega GEMINI_API_KEY en .env.local y reinicia "npm run dev".'
+              : `${provider.label}. Si falla, se usa el modo demostración.`
+          }
         />
         <Row
           icon={<Bell size={19} />}

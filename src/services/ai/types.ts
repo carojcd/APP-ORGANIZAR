@@ -63,7 +63,8 @@ export type AssistantAction =
   | { type: 'complete_item'; target: ItemTarget }
   | { type: 'delete_item'; target: ItemTarget }
   | { type: 'query_items'; query: ItemQuery }
-  | { type: 'clarify'; question: string; options?: QuickReply[]; pending: PendingIntent }
+  /** `pending` lo usa el modo demo; Gemini resuelve la respuesta con el historial. */
+  | { type: 'clarify'; question: string; options?: QuickReply[]; pending?: PendingIntent }
   | { type: 'reply'; text: string };
 
 /** Acción que espera un dato del usuario para completarse. Serializable. */
@@ -95,6 +96,8 @@ export interface InterpretContext {
   /** Resumen de registros abiertos para resolver referencias. */
   openItems: Pick<Item, 'id' | 'title' | 'categoryId' | 'date' | 'time' | 'status' | 'amount'>[];
   categories: { id: CategoryId; label: string; description: string }[];
+  /** Últimos mensajes de la conversación (para resolver aclaraciones). */
+  history?: { role: 'user' | 'assistant'; text: string }[];
 }
 
 export interface AIProvider {
